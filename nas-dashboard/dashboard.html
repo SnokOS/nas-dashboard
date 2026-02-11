@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS Dashboard - لوحة التحكم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(100%);
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+
+        .sidebar-title {
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .sidebar-subtitle {
+            color: #bdc3c7;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-right: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-right-color: #667eea;
+        }
+
+        .menu-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            border-right-color: #667eea;
+            color: white;
+        }
+
+        .menu-item i {
+            width: 24px;
+            margin-left: 15px;
+            font-size: 18px;
+        }
+
+        .menu-label {
+            flex: 1;
+            font-size: 15px;
+        }
+
+        .logout-section {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-right: 280px;
+            padding: 30px;
+            transition: margin 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .main-content.expanded {
+            margin-right: 0;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h2 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .toggle-sidebar {
+            display: none;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 50px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-icon.purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .stat-change.up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .stat-change.down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Content Section */
+        .content-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-right: 0;
+            }
+
+            .toggle-sidebar {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🖥️</div>
+            <div class="sidebar-title">NAS Dashboard</div>
+            <div class="sidebar-subtitle">مركز التحكم الشامل</div>
+        </div>
+
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span class="menu-label">Dashboard</span>
+            </a>
+            <a href="#" class="menu-item" data-section="applications">
+                <i class="fas fa-th-large"></i>
+                <span class="menu-label">التطبيقات</span>
+            </a>
+            <a href="#" class="menu-item" data-section="vm">
+                <i class="fas fa-server"></i>
+                <span class="menu-label">الأجهزة الوهمية</span>
+            </a>
+            <a href="#" class="menu-item" data-section="folders">
+                <i class="fas fa-folder-open"></i>
+                <span class="menu-label">المجلدات المشتركة</span>
+            </a>
+            <a href="#" class="menu-item" data-section="cameras">
+                <i class="fas fa-video"></i>
+                <span class="menu-label">كاميرات المراقبة</span>
+            </a>
+            <a href="#" class="menu-item" data-section="settings">
+                <i class="fas fa-cog"></i>
+                <span class="menu-label">الإعدادات</span>
+            </a>
+        </div>
+
+        <div class="logout-section">
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>تسجيل الخروج</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h2 id="pageTitle">Dashboard</h2>
+                <div class="breadcrumb" id="breadcrumb">الرئيسية > Dashboard</div>
+            </div>
+            <div class="header-right">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-name">Admin</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="content-section active" id="section-dashboard">
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <span class="stat-change up">↑ 12%</span>
+                    </div>
+                    <div class="stat-value" id="storage-used">450 GB</div>
+                    <div class="stat-label">مساحة التخزين المستخدمة</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon green">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <span class="stat-change up">↑ 3</span>
+                    </div>
+                    <div class="stat-value" id="vm-count">7</div>
+                    <div class="stat-label">الأجهزة الوهمية النشطة</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="stat-change up">↑ 5</span>
+                    </div>
+                    <div class="stat-value" id="users-count">24</div>
+                    <div class="stat-label">المستخدمون النشطون</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <span class="stat-change up">↑ 100%</span>
+                    </div>
+                    <div class="stat-value" id="network-status">متصل</div>
+                    <div class="stat-label">حالة الشبكة</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Section -->
+        <div class="content-section" id="section-applications">
+            <h2 class="section-title">التطبيقات</h2>
+            <div id="applications-content"></div>
+        </div>
+
+        <!-- VM Section -->
+        <div class="content-section" id="section-vm">
+            <h2 class="section-title">الأجهزة الوهمية</h2>
+            <div id="vm-content"></div>
+        </div>
+
+        <!-- Folders Section -->
+        <div class="content-section" id="section-folders">
+            <h2 class="section-title">المجلدات المشتركة</h2>
+            <div id="folders-content"></div>
+        </div>
+
+        <!-- Cameras Section -->
+        <div class="content-section" id="section-cameras">
+            <h2 class="section-title">كاميرات المراقبة</h2>
+            <div id="cameras-content"></div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="content-section" id="section-settings">
+            <h2 class="section-title">الإعدادات</h2>
+            <div id="settings-content"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
